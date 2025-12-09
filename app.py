@@ -460,7 +460,7 @@ def unit_converter_page():
             'to_base': {
                 'J':  lambda x: x,
                 'kJ': lambda x: x * 1000,
-                'cal': lambda x: x * 4. 184,
+                'cal': lambda x: x * 4.184,
                 'kcal': lambda x: x * 4184,
                 'BTU':  lambda x: x * 1055.06,
                 'kWh':  lambda x: x * 3600000
