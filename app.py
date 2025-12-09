@@ -2,35 +2,13 @@ import streamlit as st
 import math
 import pandas as pd
 import numpy as np
-
-st.set_page_config(
-    page_title="Chemical Engineering Toolkit",
-    page_icon="🧪",
-    layout="wide"
-)
-
-st.title("🧪 Chemical Engineering Toolkit")
-st.caption("✨ Easy access anytime, on any device")
-
-st.header("📊 Reynolds Number Calculator")
-
-col1, col2 = st.columns(2)
-
-with col1:
-    rho = st.number_input("Density (kg/m³)", value=1000.0)
-    v = st.number_input("Velocity (m/s)", value=1.0)
-import streamlit as st
-import math
-import pandas as pd
-import numpy as np
 from datetime import datetime
 import json
 import os
 
-# Configure matplotlib BEFORE importing pyplot
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+# Use Plotly for plotting (works better on Streamlit Cloud)
+import plotly.graph_objects as go
+import plotly.express as px
 
 # Page config
 st.set_page_config(
@@ -44,12 +22,12 @@ st.set_page_config(
 st.markdown("""
 <style>
     .stApp {
-        background-color: #1e1e2e;
+        background-color:  #1e1e2e;
         color: #cdd6f4;
     }
     .stButton>button {
         background-color: #89b4fa;
-        color:  #1e1e2e;
+        color:   #1e1e2e;
         font-weight: bold;
         border-radius: 8px;
         padding: 10px 24px;
@@ -58,7 +36,7 @@ st.markdown("""
     .stButton>button:hover {
         background-color: #74c7ec;
     }
-    .result-box {
+    . result-box {
         background-color: #313244;
         padding: 20px;
         border-radius: 10px;
@@ -68,9 +46,9 @@ st.markdown("""
     .equation-card {
         background-color: #313244;
         padding: 15px;
-        border-radius: 8px;
+        border-radius:  8px;
         border-left: 4px solid #89b4fa;
-        margin: 10px 0;
+        margin:  10px 0;
     }
     div[data-testid="stMetricValue"] {
         font-size: 28px;
@@ -93,27 +71,27 @@ def add_to_history(equation_name, inputs, result):
         'inputs': inputs,
         'result': result
     }
-    st.session_state. calculation_history.insert(0, entry)
-    if len(st.session_state.calculation_history) > 50:
+    st.session_state.calculation_history.insert(0, entry)
+    if len(st.session_state. calculation_history) > 50: 
         st.session_state.calculation_history = st.session_state.calculation_history[: 50]
 
 # Complete equation definitions (ALL 20)
 def get_equations():
     return {
-        'Reynolds Number':  {
+        'Reynolds Number': {
             'desc': 'Determines flow regime (laminar, transitional, turbulent)',
             'formula': 'Re = ρvD/μ',
             'params': {
-                'rho': ('Fluid Density', 'kg/m³', 1000.0),
+                'rho': ('Fluid Density', 'kg/m³', 1000. 0),
                 'v': ('Fluid Velocity', 'm/s', 1.0),
-                'D': ('Pipe Diameter', 'm', 0.05),
+                'D':  ('Pipe Diameter', 'm', 0.05),
                 'mu': ('Dynamic Viscosity', 'Pa·s', 0.001)
             },
-            'calc': lambda p: p['rho'] * p['v'] * p['D'] / p['mu'],
+            'calc': lambda p:  p['rho'] * p['v'] * p['D'] / p['mu'],
             'result_label': 'Reynolds Number',
             'result_unit': ''
         },
-        'Darcy-Weisbach': {
+        'Darcy-Weisbach':  {
             'desc': 'Calculates pressure drop due to friction in a pipe',
             'formula': 'ΔP = f(L/D)(ρv²/2)',
             'params': {
@@ -128,7 +106,7 @@ def get_equations():
             'result_unit': 'Pa'
         },
         'Pump Power': {
-            'desc':  'Calculates pump power needed for fluid transport',
+            'desc': 'Calculates pump power needed for fluid transport',
             'formula': 'P = ρgQH/η',
             'params': {
                 'rho': ('Density', 'kg/m³', 1000.0),
@@ -142,8 +120,8 @@ def get_equations():
         },
         'Antoine Equation': {
             'desc': 'Gives vapor pressure of a pure component',
-            'formula':  'log₁₀(P) = A - B/(C+T)',
-            'params': {
+            'formula': 'log₁₀(P) = A - B/(C+T)',
+            'params':  {
                 'A': ('Coefficient A', '', 8.07131),
                 'B': ('Coefficient B', '', 1730.63),
                 'C': ('Coefficient C', '', 233.426),
@@ -154,16 +132,16 @@ def get_equations():
             'result_unit': 'mmHg'
         },
         'Batch Reactor (1st Order)': {
-            'desc':  '1st-order batch reactor concentration over time',
+            'desc': '1st-order batch reactor concentration over time',
             'formula': 'C = C₀e^(-kt)',
-            'params': {
+            'params':  {
                 'C0': ('Initial Concentration', 'mol/L', 1.0),
                 'k':  ('Rate Constant', '1/s', 0.1),
                 't': ('Time', 's', 10.0)
             },
             'calc': lambda p: p['C0'] * math.exp(-p['k'] * p['t']),
             'result_label': 'Concentration',
-            'result_unit':  'mol/L'
+            'result_unit': 'mol/L'
         },
         'CSTR (1st Order)': {
             'desc': 'Steady-state CSTR for 1st order reaction',
@@ -174,7 +152,7 @@ def get_equations():
                 'tau': ('Residence Time', 's', 10.0)
             },
             'calc': lambda p: p['C0'] / (1 + p['k'] * p['tau']),
-            'result_label':  'Outlet Concentration',
+            'result_label': 'Outlet Concentration',
             'result_unit': 'mol/L'
         },
         'LMTD':  {
@@ -220,12 +198,12 @@ def get_equations():
                 'P1':  ('Pressure 1', 'Pa', 200000.0),
                 'v1': ('Velocity 1', 'm/s', 2.0),
                 'z1': ('Height 1', 'm', 10.0),
-                'rho': ('Density', 'kg/m³', 1000.0),
+                'rho':  ('Density', 'kg/m³', 1000.0),
                 'v2': ('Velocity 2', 'm/s', 5.0),
                 'z2': ('Height 2', 'm', 5.0)
             },
             'calc': lambda p: p['P1']/(p['rho']*9.81) + p['v1']**2/(2*9.81) + p['z1'] - p['v2']**2/(2*9.81) - p['z2'],
-            'result_label': 'Pressure Head 2',
+            'result_label':  'Pressure Head 2',
             'result_unit':  'm'
         },
         'Ideal Gas Law': {
@@ -237,13 +215,13 @@ def get_equations():
                 'n': ('Moles', 'mol', 1.0),
                 'T': ('Temperature', 'K', 273.15)
             },
-            'calc': lambda p:  p['P'] * p['V'] / (p['n'] * p['T']),
+            'calc': lambda p: p['P'] * p['V'] / (p['n'] * p['T']),
             'result_label': 'Gas Constant R',
             'result_unit':  'J/(mol·K)'
         },
         'Ergun Equation': {
             'desc': 'Pressure drop in packed bed',
-            'formula':  'ΔP/L = 150μv(1-ε)²/(ε³Dp²) + 1.75ρv²(1-ε)/(ε³Dp)',
+            'formula': 'ΔP/L = 150μv(1-ε)²/(ε³Dp²) + 1.75ρv²(1-ε)/(ε³Dp)',
             'params': {
                 'mu': ('Viscosity', 'Pa·s', 0.001),
                 'v': ('Superficial Velocity', 'm/s', 0.1),
@@ -270,10 +248,10 @@ def get_equations():
             'result_unit': ''
         },
         'Fanning Equation': {
-            'desc':  'Pressure drop using Fanning friction factor',
+            'desc': 'Pressure drop using Fanning friction factor',
             'formula': 'ΔP = 4f(L/D)(ρv²/2)',
             'params': {
-                'f': ('Fanning Friction Factor', '', 0.005),
+                'f':  ('Fanning Friction Factor', '', 0.005),
                 'L': ('Pipe Length', 'm', 100.0),
                 'D':  ('Diameter', 'm', 0.05),
                 'rho': ('Density', 'kg/m³', 1000.0),
@@ -286,7 +264,7 @@ def get_equations():
         'Continuity Equation': {
             'desc': 'Mass conservation in pipe flow',
             'formula': 'A₁v₁ = A₂v₂',
-            'params': {
+            'params':  {
                 'D1': ('Diameter 1', 'm', 0.1),
                 'v1': ('Velocity 1', 'm/s', 2.0),
                 'D2': ('Diameter 2', 'm', 0.05)
@@ -336,7 +314,7 @@ def get_equations():
         'Fick\'s First Law': {
             'desc':  'Diffusion flux in steady state',
             'formula': 'J = -D(dC/dx)',
-            'params': {
+            'params':  {
                 'D': ('Diffusion Coefficient', 'm²/s', 1e-9),
                 'C1': ('Concentration 1', 'mol/m³', 100.0),
                 'C2': ('Concentration 2', 'mol/m³', 0.0),
@@ -349,7 +327,7 @@ def get_equations():
         'Packed Bed Height': {
             'desc': 'Height of packed column for separation',
             'formula': 'Z = HTU × NTU',
-            'params':  {
+            'params': {
                 'HTU': ('Height of Transfer Unit', 'm', 0.5),
                 'NTU':  ('Number of Transfer Units', '', 5.0)
             },
@@ -369,8 +347,8 @@ def unit_converter_page():
             'to_base': {
                 '°C': lambda x: x + 273.15,
                 'K': lambda x: x,
-                '°F': lambda x: (x + 459.67) * 5/9,
-                'R':  lambda x: x * 5/9
+                '°F': lambda x:  (x + 459.67) * 5/9,
+                'R': lambda x: x * 5/9
             },
             'from_base': {
                 '°C': lambda x: x - 273.15,
@@ -382,9 +360,9 @@ def unit_converter_page():
         'Pressure': {
             'units': ['Pa', 'kPa', 'bar', 'psi', 'atm', 'mmHg'],
             'to_base': {
-                'Pa':  lambda x: x,
+                'Pa': lambda x: x,
                 'kPa': lambda x: x * 1000,
-                'bar': lambda x:  x * 100000,
+                'bar': lambda x: x * 100000,
                 'psi':  lambda x: x * 6894.76,
                 'atm': lambda x: x * 101325,
                 'mmHg': lambda x: x * 133.322
@@ -392,17 +370,17 @@ def unit_converter_page():
             'from_base': {
                 'Pa': lambda x: x,
                 'kPa': lambda x: x / 1000,
-                'bar': lambda x:  x / 100000,
-                'psi': lambda x: x / 6894.76,
-                'atm': lambda x:  x / 101325,
-                'mmHg': lambda x:  x / 133.322
+                'bar': lambda x: x / 100000,
+                'psi':  lambda x: x / 6894.76,
+                'atm': lambda x: x / 101325,
+                'mmHg': lambda x: x / 133.322
             }
         },
         'Length': {
             'units': ['m', 'cm', 'mm', 'ft', 'in', 'km'],
             'to_base':  {
                 'm': lambda x:  x,
-                'cm': lambda x:  x / 100,
+                'cm': lambda x: x / 100,
                 'mm':  lambda x: x / 1000,
                 'ft': lambda x: x * 0.3048,
                 'in': lambda x: x * 0.0254,
@@ -424,7 +402,7 @@ def unit_converter_page():
                 'm³/h': lambda x: x / 3600,
                 'L/min': lambda x: x / 60000,
                 'L/s':  lambda x: x / 1000,
-                'gpm':  lambda x: x * 0.00006309,
+                'gpm': lambda x: x * 0.00006309,
                 'ft³/min': lambda x: x * 0.000471947
             },
             'from_base': {
@@ -462,8 +440,8 @@ def unit_converter_page():
                 'kJ': lambda x: x * 1000,
                 'cal': lambda x: x * 4.184,
                 'kcal': lambda x: x * 4184,
-                'BTU':  lambda x: x * 1055.06,
-                'kWh':  lambda x: x * 3600000
+                'BTU': lambda x: x * 1055.06,
+                'kWh': lambda x: x * 3600000
             },
             'from_base': {
                 'J': lambda x: x,
@@ -476,7 +454,7 @@ def unit_converter_page():
         }
     }
     
-    col1, col2 = st.columns(2)
+    col1, col2 = st. columns(2)
     
     with col1:
         category = st.selectbox("Category", list(conversions.keys()))
@@ -495,7 +473,7 @@ def unit_converter_page():
             st.markdown(f"""
             <div class="result-box">
                 <h3>Result</h3>
-                <h2 style="color: #89b4fa;">{result:.6f} {to_unit}</h2>
+                <h2 style="color: #89b4fa;">{result:. 6f} {to_unit}</h2>
             </div>
             """, unsafe_allow_html=True)
 
@@ -524,15 +502,13 @@ def calculator_page():
     equation = filtered_eqs[equation_name]
     
     # Display equation info
-    col1, col2 = st. columns([2, 1])
-    with col1:
-        st.markdown(f"""
-        <div class="equation-card">
-            <h4>📐 {equation_name}</h4>
-            <p>{equation['desc']}</p>
-            <p><strong>Formula:</strong> <code>{equation['formula']}</code></p>
-        </div>
-        """, unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="equation-card">
+        <h4>📐 {equation_name}</h4>
+        <p>{equation['desc']}</p>
+        <p><strong>Formula:</strong> <code>{equation['formula']}</code></p>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Input section
     st.subheader("Input Parameters")
@@ -578,18 +554,26 @@ def calculator_page():
     
     with col2:
         if st.button("💾 Save as Template", use_container_width=True):
-            template_name = st.text_input("Template name:", key="save_template")
-            if template_name:
-                st.session_state.templates[template_name] = {
+            st.session_state['show_save_template'] = True
+    
+    with col3:
+        if st. button("🔄 Reset", use_container_width=True):
+            st.rerun()
+    
+    # Template saving dialog
+    if st.session_state.get('show_save_template', False):
+        with st.form("save_template_form"):
+            template_name = st.text_input("Template name:")
+            submit = st.form_submit_button("Save Template")
+            
+            if submit and template_name:
+                st.session_state. templates[template_name] = {
                     'equation': equation_name,
                     'inputs':  inputs,
                     'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
                 st.success(f"✅ Saved as '{template_name}'!")
-    
-    with col3:
-        if st. button("🔄 Reset", use_container_width=True):
-            st.rerun()
+                st.session_state['show_save_template'] = False
 
 # Parametric study
 def parametric_study_page():
@@ -627,7 +611,7 @@ def parametric_study_page():
     cols = st.columns(2)
     
     for i, (key, (label, unit, default)) in enumerate(equation['params'].items()):
-        if key != var_param: 
+        if key != var_param:
             with cols[i % 2]:
                 unit_str = f" ({unit})" if unit else ""
                 const_inputs[key] = st. number_input(
@@ -652,11 +636,7 @@ def parametric_study_page():
                 except: 
                     y_values.append(np.nan)
             
-            # Create plot with dark theme
-            fig, ax = plt.subplots(figsize=(10, 6), facecolor='#1e1e2e')
-            ax.set_facecolor('#313244')
-            ax.plot(x_values, y_values, 'o-', color='#89b4fa', linewidth=2, markersize=4)
-            
+            # Create interactive Plotly plot
             var_label = equation['params'][var_param][0]
             var_unit = equation['params'][var_param][1]
             xlabel = f"{var_label} ({var_unit})" if var_unit else var_label
@@ -664,18 +644,30 @@ def parametric_study_page():
             result_unit = equation['result_unit']
             ylabel = f"{equation['result_label']} ({result_unit})" if result_unit else equation['result_label']
             
-            ax. set_xlabel(xlabel, fontsize=12, color='#cdd6f4')
-            ax.set_ylabel(ylabel, fontsize=12, color='#cdd6f4')
-            ax.set_title(f"{equation_name} vs {var_label}", fontsize=14, color='#89b4fa', pad=20)
-            ax.grid(True, alpha=0.3, color='#cdd6f4')
-            ax.tick_params(colors='#cdd6f4')
+            fig = go.Figure()
+            fig.add_trace(go. Scatter(
+                x=x_values,
+                y=y_values,
+                mode='lines+markers',
+                line=dict(color='#89b4fa', width=2),
+                marker=dict(size=6, color='#89b4fa'),
+                name=equation_name
+            ))
             
-            for spine in ax.spines.values():
-                spine.set_color('#cdd6f4')
+            fig.update_layout(
+                title=f"{equation_name} vs {var_label}",
+                xaxis_title=xlabel,
+                yaxis_title=ylabel,
+                plot_bgcolor='#313244',
+                paper_bgcolor='#1e1e2e',
+                font=dict(color='#cdd6f4', size=12),
+                xaxis=dict(gridcolor='#45475a', showgrid=True),
+                yaxis=dict(gridcolor='#45475a', showgrid=True),
+                height=500,
+                hovermode='x unified'
+            )
             
-            plt.tight_layout()
-            st.pyplot(fig)
-            plt.close()
+            st.plotly_chart(fig, use_container_width=True)
             
             # Download data
             df = pd.DataFrame({
@@ -721,7 +713,7 @@ def templates_page():
                 
                 col1, col2 = st. columns(2)
                 with col1:
-                    if st. button(f"🔄 Load", key=f"load_{name}"):
+                    if st.button(f"🔄 Load", key=f"load_{name}"):
                         st.info(f"Template '{name}' loaded!  Go to Calculator tab.")
                 
                 with col2:
@@ -739,7 +731,7 @@ def history_page():
         col1, col2 = st. columns([3, 1])
         
         with col1:
-            st. write(f"**Total Calculations:** {len(st. session_state.calculation_history)}")
+            st.write(f"**Total Calculations:** {len(st. session_state.calculation_history)}")
         
         with col2:
             if st.button("🗑️ Clear All"):
@@ -782,7 +774,7 @@ def history_page():
                 
                 with col2:
                     st.write("**Result:**")
-                    st.markdown(f"### {entry['result']:. 6f}")
+                    st.markdown(f"### {entry['result']:.6f}")
     else:
         st.info("📭 No calculations yet. Start calculating in the Calculator tab!")
 
@@ -807,7 +799,7 @@ def main():
         st.divider()
         
         # Stats
-        col1, col2 = st.columns(2)
+        col1, col2 = st. columns(2)
         with col1:
             st.metric("Equations", "20")
         with col2:
@@ -829,5 +821,5 @@ def main():
     elif page == "📜 History":
         history_page()
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
     main()
