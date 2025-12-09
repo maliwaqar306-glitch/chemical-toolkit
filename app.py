@@ -82,7 +82,7 @@ def get_equations():
             'desc': 'Determines flow regime (laminar, transitional, turbulent)',
             'formula': 'Re = ρvD/μ',
             'params': {
-                'rho': ('Fluid Density', 'kg/m³', 1000. 0),
+                'rho': ('Fluid Density', 'kg/m³', 1000.0),
                 'v': ('Fluid Velocity', 'm/s', 1.0),
                 'D':  ('Pipe Diameter', 'm', 0.05),
                 'mu': ('Dynamic Viscosity', 'Pa·s', 0.001)
