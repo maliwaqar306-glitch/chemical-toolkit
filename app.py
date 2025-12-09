@@ -1,14 +1,15 @@
-import matplotlib
-matplotlib.use('Agg')
-
 import streamlit as st
 import math
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from datetime import datetime
 import json
 import os
+
+# Configure matplotlib for Streamlit
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 # Page configuration
 st.set_page_config(
